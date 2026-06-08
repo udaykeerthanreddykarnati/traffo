@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Traffo — Traffic Intelligence System</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #080c10;
+    --surface: #0e1318;
+    --surface2: #141b22;
+    --border: #1e2a35;
+    --border2: #243040;
+    --text: #d4e4f0;
+    --text-dim: #5a7a90;
+    --text-muted: #3a5570;
+    --accent: #00c8ff;
+    --accent-dim: #0090bb;
+    --green: #00e5a0;
+    --yellow: #ffd060;
+    --red: #ff4d6a;
+    --orange: #ff8c42;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    padding: 48px 0 40px;
+    display: flex;
+    align-items: flex-end;
+    gap: 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--accent);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .logo-icon::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0,200,255,0.15), transparent);
+  }
+
+  .logo-icon svg { position: relative; z-index: 1; }
+
+  .logo-text h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #fff;
+  }
+
+  .logo-text h1 span { color: var(--accent); }
+
+  .logo-text p {
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-family: var(--mono);
+    margin-top: 2px;
+  }
+
+  .header-status {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Input section */
+  .input-section { margin-bottom: 32px; }
+
+  .input-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .input-wrapper {
+    position: relative;
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    background: var(--surface);
+    transition: border-color 0.2s;
+  }
+
+  .input-wrapper:focus-within {
+    border-color: var(--accent-dim);
+    box-shadow: 0 0 0 3px rgba(0,200,255,0.08);
+  }
+
+  textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 18px 20px;
+    resize: none;
+    min-height: 100px;
+  }
+
+  textarea::placeholder { color: var(--text-muted); }
+
+  .input-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .char-count {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .analyze-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s;
+    letter-spacing: 0.3px;
+  }
+
+  .analyze-btn:hover { background: #33d4ff; transform: translateY(-1px); }
+  .analyze-btn:active { transform: translateY(0); }
+  .analyze-btn:disabled { background: var(--border2); color: var(--text-muted); cursor: not-allowed; transform: none; }
+
+  .btn-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: none;
+  }
+
+  .analyze-btn.loading .btn-spinner { display: block; }
+  .analyze-btn.loading .btn-text { display: none; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Examples */
+  .examples-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+  }
+
+  .example-chip {
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text-dim);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 280px;
+  }
+
+  .example-chip:hover { border-color: var(--accent-dim); color: var(--accent); }
+
+  /* Agent trace panel */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .panel-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface2);
+  }
+
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .panel-badge {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--border);
+    color: var(--text-dim);
+  }
+
+  .panel-body { padding: 20px; }
+
+  /* Trace steps */
+  #trace-container { display: flex; flex-direction: column; gap: 10px; }
+
+  .trace-step {
+    display: flex;
+    gap: 14px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .trace-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 13px;
+    margin-top: 2px;
+  }
+
+  .trace-icon.thought { background: rgba(90,122,144,0.15); }
+  .trace-icon.tool_call { background: rgba(0,200,255,0.12); }
+  .trace-icon.tool_result { background: rgba(0,229,160,0.12); }
+  .trace-icon.error { background: rgba(255,77,106,0.12); }
+
+  .trace-content { flex: 1; min-width: 0; }
+
+  .trace-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .trace-label.thought { color: var(--text-dim); }
+  .trace-label.tool_call { color: var(--accent); }
+  .trace-label.tool_result { color: var(--green); }
+  .trace-label.error { color: var(--red); }
+
+  .trace-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .trace-code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: var(--text);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* Result card */
+  #result-card {
+    display: none;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .result-header {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .metric-cell {
+    background: var(--surface2);
+    padding: 18px 20px;
+    text-align: center;
+  }
+
+  .metric-value {
+    font-size: 26px;
+    font-weight: 700;
+    font-family: var(--mono);
+    margin-bottom: 4px;
+  }
+
+  .metric-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+  }
+
+  .congestion-low { color: var(--green); }
+  .congestion-medium { color: var(--yellow); }
+  .congestion-high { color: var(--orange); }
+  .congestion-critical { color: var(--red); }
+
+  .risk-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  .risk-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+    background: linear-gradient(90deg, var(--green), var(--yellow), var(--red));
+  }
+
+  .result-section { margin-bottom: 20px; }
+
+  .result-section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .action-list { display: flex; flex-direction: column; gap: 6px; }
+
+  .action-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border-radius: 8px;
+    border-left: 3px solid var(--accent);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .broadcast-box {
+    background: rgba(0,229,160,0.06);
+    border: 1px solid rgba(0,229,160,0.2);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--green);
+    line-height: 1.6;
+  }
+
+  .reasoning-box {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .confidence-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .confidence-high { background: rgba(0,229,160,0.12); color: var(--green); border: 1px solid rgba(0,229,160,0.25); }
+  .confidence-medium { background: rgba(255,208,96,0.12); color: var(--yellow); border: 1px solid rgba(255,208,96,0.25); }
+  .confidence-low { background: rgba(255,77,106,0.12); color: var(--red); border: 1px solid rgba(255,77,106,0.25); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state .big-icon {
+    font-size: 40px;
+    margin-bottom: 16px;
+    opacity: 0.4;
+  }
+
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <path d="M11 2L4 7v8l7 5 7-5V7L11 2z" stroke="#00c8ff" stroke-width="1.5" fill="none"/>
+          <circle cx="11" cy="11" r="2.5" fill="#00c8ff"/>
+          <path d="M11 6v2M11 14v2M6 11h2M14 11h2" stroke="#00c8ff" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <h1>Traf<span>fo</span></h1>
+        <p>Traffic Intelligence System</p>
+      </div>
+    </div>
+    <div class="header-status">
+      <div class="status-dot"></div>
+      AGENT READY
+    </div>
+  </header>
+
+  <div class="input-section">
+    <span class="input-label">Incident Description</span>
+    <div class="input-wrapper">
+      <textarea
+        id="incident-input"
+        placeholder="Describe a traffic incident in natural language... e.g. 'Major accident on NH48 near Hoskote, Bengaluru. 6pm rush hour. Heavy rain. 3 lanes blocked.'"
+        maxlength="500"
+        oninput="updateCharCount()"
+      ></textarea>
+      <div class="input-footer">
+        <span class="char-count"><span id="char-count">0</span>/500</span>
+        <button class="analyze-btn" id="analyze-btn" onclick="analyze()">
+          <div class="btn-spinner"></div>
+          <span class="btn-text">▶ Analyze Incident</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="examples-row" id="examples-row">
+    <span class="input-label" style="width:100%;margin-bottom:4px;">Try an example</span>
+  </div>
+
+  <!-- Agent Trace -->
+  <div class="panel" id="trace-panel">
+    <div class="panel-header">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <circle cx="6" cy="6" r="5" stroke="#5a7a90" stroke-width="1.2"/>
+        <path d="M6 4v3M6 8.5v.5" stroke="#5a7a90" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      <span class="panel-title">Agent Reasoning Trace</span>
+      <span class="panel-badge" id="step-count">0 steps</span>
+    </div>
+    <div class="panel-body">
+      <div id="trace-container">
+        <div class="empty-state">
+          <div class="big-icon">🧠</div>
+          <p>Agent reasoning will appear here in real time.<br/>Each tool call, thought, and decision is shown as it happens.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result Card -->
+  <div class="panel" id="result-card">
+    <div class="panel-header">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M2 6l3 3 5-5" stroke="#00e5a0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="panel-title">Incident Response Plan</span>
+      <span class="panel-badge" id="confidence-display">–</span>
+    </div>
+    <div class="panel-body" id="result-body"></div>
+  </div>
+</div>
+
+<script>
+  const API_BASE = "http://localhost:8000";
+  let stepCount = 0;
+
+  function updateCharCount() {
+    const val = document.getElementById('incident-input').value.length;
+    document.getElementById('char-count').textContent = val;
+  }
+
+  // Load examples from API
+  async function loadExamples() {
+    try {
+      const r = await fetch(`${API_BASE}/examples`);
+      const data = await r.json();
+      const row = document.getElementById('examples-row');
+      data.examples.forEach(ex => {
+        const chip = document.createElement('div');
+        chip.className = 'example-chip';
+        chip.title = ex;
+        chip.textContent = ex.length > 60 ? ex.substring(0, 57) + '...' : ex;
+        chip.onclick = () => {
+          document.getElementById('incident-input').value = ex;
+          updateCharCount();
+        };
+        row.appendChild(chip);
+      });
+    } catch (e) {
+      // API not running — show static examples
+      const examples = [
+        "Major accident on NH48 near Hoskote, Bengaluru. 6pm rush hour. Heavy rain. 3 lanes blocked.",
+        "Flash floods near Silk Board junction, Bengaluru. Metro delayed.",
+        "Multi-vehicle pile-up on ORR near Marathahalli. Morning peak hour. Foggy.",
+      ];
+      const row = document.getElementById('examples-row');
+      examples.forEach(ex => {
+        const chip = document.createElement('div');
+        chip.className = 'example-chip';
+        chip.textContent = ex.length > 60 ? ex.substring(0, 57) + '...' : ex;
+        chip.onclick = () => {
+          document.getElementById('incident-input').value = ex;
+          updateCharCount();
+        };
+        row.appendChild(chip);
+      });
+    }
+  }
+
+  function addTraceStep(type, content) {
+    stepCount++;
+    document.getElementById('step-count').textContent = `${stepCount} step${stepCount > 1 ? 's' : ''}`;
+
+    const container = document.getElementById('trace-container');
+    // Remove empty state if present
+    const empty = container.querySelector('.empty-state');
+    if (empty) empty.remove();
+
+    const icons = {
+      thought: '💭',
+      tool_call: '🔧',
+      tool_result: '📦',
+      error: '⚠️'
+    };
+
+    const labels = {
+      thought: 'Reasoning',
+      tool_call: 'Tool Call',
+      tool_result: 'Tool Result',
+      error: 'Error'
+    };
+
+    const step = document.createElement('div');
+    step.className = 'trace-step';
+
+    let contentHTML = '';
+
+    if (type === 'tool_call') {
+      contentHTML = `<div class="trace-code">→ ${content.tool}(${JSON.stringify(content.args, null, 2)})</div>`;
+    } else if (type === 'tool_result') {
+      const resultStr = JSON.stringify(content.result, null, 2);
+      contentHTML = `<div class="trace-code">${content.tool} returned:\n${resultStr.length > 400 ? resultStr.substring(0, 400) + '...' : resultStr}</div>`;
+    } else {
+      contentHTML = `<div class="trace-text">${typeof content === 'string' ? content : JSON.stringify(content)}</div>`;
+    }
+
+    step.innerHTML = `
+      <div class="trace-icon ${type}">${icons[type] || '•'}</div>
+      <div class="trace-content">
+        <div class="trace-label ${type}">${labels[type] || type}</div>
+        ${contentHTML}
+      </div>
+    `;
+
+    container.appendChild(step);
+    step.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function renderResult(result) {
+    const card = document.getElementById('result-card');
+    const body = document.getElementById('result-body');
+    card.style.display = 'block';
+
+    // Update confidence badge
+    const conf = result.confidence || 'medium';
+    const confBadge = document.getElementById('confidence-display');
+    confBadge.textContent = `${conf.toUpperCase()} CONFIDENCE`;
+    confBadge.className = `panel-badge confidence-badge confidence-${conf}`;
+
+    const congLevel = (result.congestion_level || 'unknown').toLowerCase();
+    const riskScore = result.risk_score || 0;
+    const actions = result.recommended_actions || [];
+
+    body.innerHTML = `
+      <div class="result-header">
+        <div class="metric-cell">
+          <div class="metric-value congestion-${congLevel}">${congLevel.toUpperCase()}</div>
+          <div class="metric-label">Congestion Level</div>
+        </div>
+        <div class="metric-cell">
+          <div class="metric-value" style="color: ${riskScore >= 8 ? 'var(--red)' : riskScore >= 5 ? 'var(--yellow)' : 'var(--green)'}">${riskScore}<span style="font-size:14px;color:var(--text-dim)">/10</span></div>
+          <div class="metric-label">Risk Score</div>
+          <div class="risk-bar"><div class="risk-fill" style="width: ${riskScore * 10}%"></div></div>
+        </div>
+        <div class="metric-cell">
+          <div class="metric-value" style="font-size:14px; color: var(--text); padding-top:4px">${result.affected_area || 'Unknown area'}</div>
+          <div class="metric-label">Affected Area</div>
+          <div style="margin-top:6px;font-size:11px;font-family:var(--mono);color:var(--text-dim)">${result.primary_cause || ''}</div>
+        </div>
+      </div>
+
+      ${actions.length ? `
+      <div class="result-section">
+        <div class="result-section-title">Recommended Actions</div>
+        <div class="action-list">
+          ${actions.map(a => `<div class="action-item"><span style="color:var(--accent);flex-shrink:0">›</span>${a}</div>`).join('')}
+        </div>
+      </div>` : ''}
+
+      ${result.signal_adjustments ? `
+      <div class="result-section">
+        <div class="result-section-title">Signal Adjustments</div>
+        <div class="reasoning-box">${result.signal_adjustments}</div>
+      </div>` : ''}
+
+      ${result.public_broadcast ? `
+      <div class="result-section">
+        <div class="result-section-title">Public Broadcast Message</div>
+        <div class="broadcast-box">📢 ${result.public_broadcast}</div>
+      </div>` : ''}
+
+      ${result.reasoning_summary ? `
+      <div class="result-section">
+        <div class="result-section-title">Reasoning Summary</div>
+        <div class="reasoning-box">${result.reasoning_summary}</div>
+      </div>` : ''}
+    `;
+
+    card.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  async function analyze() {
+    const incident = document.getElementById('incident-input').value.trim();
+    if (!incident) {
+      document.getElementById('incident-input').focus();
+      return;
+    }
+
+    // Reset UI
+    stepCount = 0;
+    document.getElementById('step-count').textContent = '0 steps';
+    document.getElementById('trace-container').innerHTML = `
+      <div class="empty-state">
+        <div class="big-icon" style="animation: pulse 1s infinite">⚡</div>
+        <p>Agent is analyzing the incident...</p>
+      </div>
+    `;
+    document.getElementById('result-card').style.display = 'none';
+
+    const btn = document.getElementById('analyze-btn');
+    btn.disabled = true;
+    btn.classList.add('loading');
+
+    try {
+      const response = await fetch(`${API_BASE}/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ incident })
+      });
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (!data) continue;
+
+          try {
+            const event = JSON.parse(data);
+            if (event.type === 'done') break;
+            if (event.type === 'final') {
+              renderResult(event.content);
+            } else {
+              addTraceStep(event.type, event.content);
+            }
+          } catch (e) { /* skip malformed */ }
+        }
+      }
+    } catch (err) {
+      addTraceStep('error', `Could not connect to Traffo backend. Make sure the server is running on ${API_BASE}. Error: ${err.message}`);
+    }
+
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
+
+  // Allow Enter to submit (Shift+Enter for newline)
+  document.addEventListener('DOMContentLoaded', () => {
+    loadExamples();
+    document.getElementById('incident-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        analyze();
+      }
+    });
+  });
+</script>
+</body>
+</html>
