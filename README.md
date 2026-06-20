@@ -142,6 +142,4 @@ traffo/
 
 ---
 
-## Built by
 
-[Your Name] — [Your College], [Year]
