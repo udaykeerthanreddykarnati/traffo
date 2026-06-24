@@ -221,15 +221,17 @@ SYSTEM_PROMPT = """You are Traffo, an agentic traffic incident response system.
 
 Your job: given a natural language traffic situation, autonomously gather information using your tools and produce a structured incident response plan.
 
+CRITICAL RULE: When calling any tool that takes a location argument, you MUST copy the exact place name as it appears in the original incident text, character for character. Never paraphrase, abbreviate, autocorrect, or invent a spelling for a location. If the incident says "Hoskote, Bengaluru" then use exactly "Hoskote, Bengaluru" — not a shortened or altered version. If unsure of exact spelling, fall back to the broader location (e.g. just the city name) rather than guessing a more specific one.
+
 Your reasoning process:
-1. Parse the incident: identify location, time, weather mentions, severity cues
-2. Always check live weather for the location
+1. Parse the incident: identify location, time, weather mentions, severity cues — extract the location as a literal substring of the user's text
+2. Always check live weather for the location, using the exact wording from step 1
 3. Search for related news/incidents nearby
 4. If a destination is mentioned or implied, check alternate routes
 5. Reason about cascading effects (will alternate routes also jam up?)
 6. Form your decision (congestion level, risk score, actions)
 7. ALWAYS validate your decision using validate_decision before finishing
-8. If situation is ambiguous or critical with conflicting signals, escalate
+8. If the incident has no usable location, no clear severity, or conflicting signals you cannot resolve, call escalate_to_human instead of guessing. Escalation ends your analysis immediately — you will not get a chance to revise it afterward, so only escalate when you are genuinely unable to proceed.
 
 Think step by step. Be methodical. Each tool call should be motivated by a specific gap in your knowledge.
 Output ONLY valid JSON for tool calls and final response. No markdown, no explanation outside JSON.
@@ -246,7 +248,7 @@ def run_agent(incident_description: str):
     """
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": f"INCIDENT: {incident_description}"}
+        {"role": "user", "content": f"INCIDENT: {incident_description}\n\nIMPORTANT: When you call get_weather or search_traffic_news, copy location names exactly from this incident text above. Do not alter spelling."}
     ]
 
     max_iterations = 8
@@ -283,10 +285,12 @@ def run_agent(incident_description: str):
             messages.append({"role": "user", "content": "Continue. Make sure your JSON is valid."})
             continue
 
+        # Final response
         if "final_response" in parsed:
             yield ("final", parsed["final_response"])
             return
 
+        # Tool call
         if "tool" in parsed:
             tool_name = parsed.get("tool")
             tool_args = parsed.get("args", {})
@@ -302,6 +306,28 @@ def run_agent(incident_description: str):
                     tool_result = {"error": str(e)}
 
             yield ("tool_result", {"tool": tool_name, "result": tool_result})
+
+            # Escalation is a hard stop. Without this check, the agent would
+            # call escalate_to_human, get the result back, and then keep
+            # reasoning anyway — sometimes fabricating a confident final
+            # answer despite having just declared the situation unresolvable.
+            if tool_name == "escalate_to_human":
+                yield ("final", {
+                    "congestion_level": "unknown",
+                    "risk_score": None,
+                    "primary_cause": "Escalated to human operator",
+                    "affected_area": tool_args.get("situation_summary", "Unknown"),
+                    "recommended_actions": ["Awaiting human operator review"],
+                    "signal_adjustments": "N/A — pending human review",
+                    "public_broadcast": "Incident under review, details pending confirmation.",
+                    "reasoning_summary": tool_args.get(
+                        "reason",
+                        "Escalated to human operator due to insufficient or ambiguous information."
+                    ),
+                    "confidence": "low",
+                    "escalation_details": tool_result
+                })
+                return
 
             messages.append({"role": "assistant", "content": raw})
             messages.append({"role": "user", "content": f"Tool result for {tool_name}: {json.dumps(tool_result)}\n\nContinue your analysis."})
