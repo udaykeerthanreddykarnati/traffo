@@ -1,4 +1,4 @@
-# Traffo 🚦
+# Traffo
 ### Agentic Traffic Incident Response System
 
 Natural language in → autonomous multi-tool reasoning → structured incident response plan.
