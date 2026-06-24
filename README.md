@@ -1,107 +1,54 @@
 # Traffo
 ### Agentic Traffic Incident Response System
 
-Natural language in → autonomous multi-tool reasoning → structured incident response plan.
+Traffo converts a plain-English description of a traffic incident into a structured, actionable response plan — autonomously gathering whatever real-world information it needs along the way.
 
-Traffo is an **agent**, not a pipeline. It decides what information it needs, calls the right tools in the right order, validates its own decisions against traffic management rules, and produces a complete response plan — all from a single sentence describing a traffic incident.
+You type something like:
+
+> "Major accident on NH48 near Hoskote, Bengaluru. 6pm rush hour. Heavy rain. 3 lanes blocked."
+
+And Traffo decides for itself what to check, checks it, reasons about what it found, and returns a structured incident report with congestion level, risk score, recommended actions, and a public broadcast message.
 
 ---
 
-## Architecture
+## Why This Is an Agent, Not a Pipeline
+
+A typical LLM tool runs one fixed sequence: input → process → output. Traffo doesn't work that way.
+
+Given an incident, Traffo decides at runtime what it needs to know — live weather, nearby news of related incidents, alternate routes — and calls the relevant tool only when it determines that information is missing. It observes each result, reasons about it, and decides what to check next. This reason → act → observe loop repeats until the model is confident enough to produce a final structured decision.
+
+Before finalizing anything, Traffo runs its own decision through a rule-based validator that checks for logical inconsistencies — for example, catching cases where the model rates a scenario as "low risk" despite heavy rain and multiple blocked lanes. This validation layer exists specifically to catch and correct LLM reasoning errors before they reach the output.
+
+If a situation is too ambiguous or conflicting, Traffo can escalate to a human operator with a structured handoff instead of guessing.
+
+---
+
+## How It Works
 
 ```
-User Input (natural language)
+Natural language incident
         │
         ▼
-  ┌─────────────────────────────────────────┐
-  │           Traffo Agent (Gemini)          │
-  │                                          │
-  │  Reason → Pick Tool → Call → Observe    │
-  │  Reason → Pick Tool → Call → Observe    │
-  │  ...                                     │
-  │  Validate Decision → Final Output       │
-  └─────────────────────────────────────────┘
+┌────────────────────────────────────┐
+│           Traffo Agent              │
+│   (reason → act → observe loop)     │
+└────────────────────────────────────┘
         │
-   Tools Available:
-   ├── get_weather()          → Open-Meteo API (free)
-   ├── get_alternate_routes() → OpenRouteService (free)
-   ├── search_traffic_news()  → DuckDuckGo (no key)
-   ├── validate_decision()    → Rule-based validator
-   └── escalate_to_human()    → Structured handoff
+   Tools available to the agent:
+   ├── get_weather              live weather conditions
+   ├── get_alternate_routes     route options & congestion estimates
+   ├── search_traffic_news      recent related incidents nearby
+   ├── validate_decision        rule-based consistency check
+   └── escalate_to_human        structured handoff for ambiguous cases
         │
         ▼
-  Structured Output:
-  congestion_level | risk_score | recommended_actions
-  signal_adjustments | public_broadcast | reasoning_summary
+Structured response:
+congestion_level · risk_score · primary_cause · affected_area
+recommended_actions · signal_adjustments · public_broadcast
+reasoning_summary · confidence
 ```
 
----
-
-## Quick Start
-
-### 1. Clone and set up
-
-```bash
-git clone https://github.com/yourusername/traffo
-cd traffo
-```
-
-### 2. Get your free Gemini API key
-
-Go to: https://makersuite.google.com/app/apikey
-Create a key. It's free, no credit card needed.
-
-### 3. Set up environment
-
-```bash
-cd backend
-cp ../.env.example .env
-# Edit .env and paste your GEMINI_API_KEY
-```
-
-### 4. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 5. Run the backend
-
-```bash
-python server.py
-# Server starts at http://localhost:8000
-```
-
-### 6. Open the frontend
-
-Open `frontend/index.html` in your browser. That's it.
-
----
-
-## Example Inputs
-
-```
-Major accident on NH48 near Hoskote, Bengaluru. 6pm rush hour. Heavy rain. 3 lanes blocked.
-
-Flash floods near Silk Board junction, Bengaluru. Metro services also delayed.
-
-Multi-vehicle pile-up on ORR near Marathahalli. Morning peak hour. Foggy conditions.
-
-Road cave-in near Guindy, Chennai. Emergency vehicles need corridor. Evening traffic.
-```
-
----
-
-## What Makes This an Agent
-
-Most LLM systems are pipelines: input → fixed steps → output.
-
-Traffo is an agent because:
-
-1. **It decides what to do next.** Given an incident, it chooses which tools to call based on what it currently knows and what it still needs.
-2. **It observes and adapts.** If the weather check shows thunderstorms, it adjusts its risk reasoning. If news search finds a related incident, it factors in cascade effects.
-3. **It validates itself.** Before finalizing, it calls `validate_decision()` — a rule-based constraint checker that catches logical errors (e.g., "3 lanes blocked + rain cannot = low risk").
-4. **It can escalate.** If the situation is too ambiguous, it produces a structured handoff to a human operator instead of guessing.
+The agent runs this loop for up to several iterations, calling whichever tools it judges necessary, until it produces a validated final answer.
 
 ---
 
@@ -110,12 +57,12 @@ Traffo is an agent because:
 ```
 traffo/
 ├── backend/
-│   ├── agent.py          # Core agent loop + all tool implementations
-│   ├── server.py         # FastAPI server with SSE streaming
+│   ├── agent.py          # Core agent loop and all tool implementations
+│   ├── server.py         # FastAPI server, streams agent reasoning live
 │   └── requirements.txt
 ├── frontend/
-│   └── index.html        # Single-file UI with real-time agent trace
-├── .env.example          # Environment variables template
+│   └── index.html        # UI showing real-time agent reasoning trace
+├── .env.example
 └── README.md
 ```
 
@@ -124,22 +71,34 @@ traffo/
 ## Tech Stack
 
 | Component | Technology |
-|-----------|------------|
-| LLM | Google Gemini 1.5 Flash (free) |
-| Agent Framework | Custom loop (no LangChain dependency) |
-| Weather | Open-Meteo API (free, no key) |
+|---|---|
+| LLM | Groq — Llama 3.3 70B (free tier) |
+| Agent loop | Custom-built, no external agent framework |
+| Weather data | Open-Meteo API (free, no key required) |
 | Routing | OpenRouteService (free tier) |
-| News | DuckDuckGo HTML scraping |
-| Validation | Python rule engine + Pydantic |
-| API | FastAPI + SSE streaming |
-| Frontend | Vanilla HTML/CSS/JS |
+| News search | DuckDuckGo |
+| Decision validation | Custom Python rule engine |
+| Backend | FastAPI with Server-Sent Events streaming |
+| Frontend | Vanilla HTML / CSS / JavaScript |
 
 ---
 
-## Resume Description
+## Running It
 
-> Built an agentic traffic incident response system using Google Gemini and FastAPI — autonomously chains live weather, routing, and news retrieval tools via a multi-step reasoning loop to generate structured incident response plans from natural language descriptions, with a rule-based validation layer that catches logical inconsistencies before finalizing decisions.
+```bash
+cd backend
+pip install -r requirements.txt
+cp ../.env.example .env
+# add your GROQ_API_KEY to .env
+python3 server.py
+```
+
+Then open `frontend/index.html` in a browser. The backend must be running for the frontend to work.
 
 ---
 
+## Design Notes
 
+- The agent loop is hand-written rather than built on a framework like LangChain or LangGraph, by design — to make every part of the reasoning and tool-calling process explicit and inspectable.
+- The rule-based validation layer is the system's main safeguard against LLM hallucination: it doesn't try to make the model more accurate through prompting alone, it independently checks the model's output against fixed traffic-logic constraints after the fact.
+- Weather, news, and routing tools default to free, keyless APIs wherever possible so the system runs with minimal setup.
