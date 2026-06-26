@@ -4,25 +4,24 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Traffo — Traffic Intelligence System</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
   :root {
-    --bg: #080c10;
-    --surface: #0e1318;
-    --surface2: #141b22;
-    --border: #1e2a35;
-    --border2: #243040;
-    --text: #d4e4f0;
-    --text-dim: #5a7a90;
-    --text-muted: #3a5570;
-    --accent: #00c8ff;
-    --accent-dim: #0090bb;
-    --green: #00e5a0;
-    --yellow: #ffd060;
-    --red: #ff4d6a;
-    --orange: #ff8c42;
+    --bg: #000000;
+    --border: #222222;
+    --border2: #333333;
+    --text: #eaeaea;
+    --text-dim: #999999;
+    --text-muted: #555555;
+    --accent: #df9b28;
+    --yellow: #f0c265;
+    --green: #06d6a0;
+    --red: #ef476f;
+    --orange: #e57c38;
+    --serif: 'Libre Baskerville', Georgia, serif;
+    --sans: 'Inter', system-ui, -apple-system, sans-serif;
     --mono: 'IBM Plex Mono', monospace;
-    --sans: 'Space Grotesk', sans-serif;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -31,134 +30,65 @@
     background: var(--bg);
     color: var(--text);
     font-family: var(--sans);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* Grid background */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(var(--border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--border) 1px, transparent 1px);
-    background-size: 40px 40px;
-    opacity: 0.3;
-    pointer-events: none;
-    z-index: 0;
+    line-height: 1.6;
+    padding: 60px 20px;
   }
 
   .container {
-    max-width: 960px;
+    max-width: 760px;
     margin: 0 auto;
-    padding: 0 24px 80px;
-    position: relative;
-    z-index: 1;
   }
 
-  /* Header */
   header {
-    padding: 48px 0 40px;
-    display: flex;
-    align-items: flex-end;
-    gap: 24px;
     border-bottom: 1px solid var(--border);
-    margin-bottom: 40px;
-  }
-
-  .logo {
+    padding-bottom: 20px;
+    margin-bottom: 30px;
     display: flex;
-    align-items: center;
-    gap: 12px;
+    justify-content: space-between;
+    align-items: baseline;
   }
 
-  .logo-icon {
-    width: 44px;
-    height: 44px;
-    border: 2px solid var(--accent);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .logo-icon::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(0,200,255,0.15), transparent);
-  }
-
-  .logo-icon svg { position: relative; z-index: 1; }
-
-  .logo-text h1 {
+  h1 {
+    font-family: var(--serif);
     font-size: 28px;
     font-weight: 700;
-    letter-spacing: -0.5px;
-    color: #fff;
+    letter-spacing: -0.3px;
   }
 
-  .logo-text h1 span { color: var(--accent); }
-
   .logo-text p {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-dim);
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    font-family: var(--mono);
-    margin-top: 2px;
+    margin-top: 4px;
   }
 
   .header-status {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-family: var(--mono);
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-dim);
   }
 
-  .status-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--green);
-    animation: pulse 2s infinite;
+  .status-text {
+    color: var(--green);
+    font-weight: 600;
   }
 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+  .section {
+    margin-bottom: 30px;
   }
 
-  /* Input section */
-  .input-section { margin-bottom: 32px; }
-
-  .input-label {
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
+  .label {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-weight: 700;
     color: var(--text-dim);
-    font-family: var(--mono);
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     display: block;
   }
 
   .input-wrapper {
-    position: relative;
-    border: 1px solid var(--border2);
-    border-radius: 12px;
-    background: var(--surface);
-    transition: border-color 0.2s;
-  }
-
-  .input-wrapper:focus-within {
-    border-color: var(--accent-dim);
-    box-shadow: 0 0 0 3px rgba(0,200,255,0.08);
+    border: 1px solid var(--border);
+    background: #050505;
+    border-radius: 4px;
+    overflow: hidden;
   }
 
   textarea {
@@ -168,9 +98,8 @@
     outline: none;
     color: var(--text);
     font-family: var(--sans);
-    font-size: 15px;
-    line-height: 1.6;
-    padding: 18px 20px;
+    font-size: 14.5px;
+    padding: 16px;
     resize: none;
     min-height: 100px;
   }
@@ -179,13 +108,10 @@
 
   .input-footer {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
+    align-items: center;
+    padding: 10px 16px;
     border-top: 1px solid var(--border);
-  }
-
-  .char-count {
     font-family: var(--mono);
     font-size: 11px;
     color: var(--text-muted);
@@ -193,204 +119,344 @@
 
   .analyze-btn {
     background: var(--accent);
-    color: #000;
+    color: #000000;
     border: none;
-    padding: 10px 24px;
-    border-radius: 8px;
+    padding: 8px 20px;
     font-family: var(--sans);
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.15s;
-    letter-spacing: 0.3px;
+    border-radius: 3px;
+    transition: background 0.1s;
   }
 
-  .analyze-btn:hover { background: #33d4ff; transform: translateY(-1px); }
-  .analyze-btn:active { transform: translateY(0); }
-  .analyze-btn:disabled { background: var(--border2); color: var(--text-muted); cursor: not-allowed; transform: none; }
-
-  .btn-spinner {
-    width: 14px;
-    height: 14px;
-    border: 2px solid rgba(0,0,0,0.3);
-    border-top-color: #000;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-    display: none;
+  .analyze-btn:hover:not(:disabled) {
+    background: var(--yellow);
   }
 
-  .analyze-btn.loading .btn-spinner { display: block; }
-  .analyze-btn.loading .btn-text { display: none; }
+  .analyze-btn:disabled {
+    background: #111;
+    color: var(--text-muted);
+    cursor: not-allowed;
+  }
 
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* Examples */
-  .examples-row {
+  .examples {
     display: flex;
+    flex-direction: column;
     gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 32px;
   }
 
   .example-chip {
-    font-size: 12px;
-    font-family: var(--mono);
-    color: var(--text-dim);
-    background: var(--surface);
+    font-size: 13px;
+    padding: 8px 12px;
+    background: #050505;
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 6px 12px;
     cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 280px;
+    border-radius: 3px;
+    color: var(--text-dim);
+    transition: all 0.1s;
+    line-height: 1.5;
   }
 
-  .example-chip:hover { border-color: var(--accent-dim); color: var(--accent); }
+  .example-chip:hover {
+    border-color: var(--accent);
+    color: var(--text);
+    background: #0a0a0a;
+  }
 
-  /* Agent trace panel */
-  .panel {
-    background: var(--surface);
+  /* Map Panel */
+  .map-panel {
     border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
+    background: #050505;
+    border-radius: 4px;
     margin-bottom: 24px;
+    overflow: hidden;
+  }
+
+  .map-panel-header {
+    background: #0a0a0a;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .map-search-wrapper {
+    padding: 12px 16px 0;
+    position: relative;
+  }
+
+  #map-search {
+    width: 100%;
+    background: #0a0a0a;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    outline: none;
+  }
+
+  #map-search:focus {
+    border-color: var(--accent);
+  }
+
+  #search-results {
+    position: absolute;
+    top: 100%;
+    left: 16px;
+    right: 16px;
+    background: #0a0a0a;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    margin-top: 4px;
+    max-height: 180px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+  }
+
+  .search-result-item {
+    padding: 8px 12px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .search-result-item:last-child {
+    border-bottom: none;
+  }
+
+  .search-result-item:hover {
+    background: #111;
+    color: var(--accent);
+  }
+
+  #map {
+    height: 240px;
+    width: 100%;
+    margin-top: 12px;
+    filter: grayscale(0.3) brightness(0.85) contrast(1.1);
+  }
+
+  .leaflet-control-attribution {
+    background: rgba(0,0,0,0.8) !important;
+    color: var(--text-muted) !important;
+    font-size: 9px !important;
+  }
+
+  .leaflet-control-attribution a { color: var(--text-dim) !important; }
+
+  .map-footer {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .selected-location {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .selected-location.active {
+    color: var(--green);
+  }
+
+  .clear-pin-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 3px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-family: var(--mono);
+    cursor: pointer;
+    transition: all 0.1s;
+    flex-shrink: 0;
+  }
+
+  .clear-pin-btn:hover {
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  /* Panels */
+  .panel {
+    border: 1px solid var(--border);
+    background: #050505;
+    border-radius: 4px;
+    margin-bottom: 24px;
+    overflow: hidden;
   }
 
   .panel-header {
-    padding: 14px 20px;
+    background: #0a0a0a;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border);
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 10px;
-    background: var(--surface2);
   }
 
   .panel-title {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
+    font-family: var(--serif);
+    font-size: 13px;
+    font-weight: 700;
     color: var(--text-dim);
   }
 
   .panel-badge {
-    margin-left: auto;
+    font-size: 11px;
+    color: var(--accent);
     font-family: var(--mono);
-    font-size: 10px;
-    padding: 3px 8px;
-    border-radius: 4px;
-    background: var(--border);
-    color: var(--text-dim);
   }
 
-  .panel-body { padding: 20px; }
+  .panel-body {
+    padding: 20px;
+  }
 
   /* Trace steps */
-  #trace-container { display: flex; flex-direction: column; gap: 10px; }
+  #trace-container { display: flex; flex-direction: column; gap: 14px; }
 
   .trace-step {
     display: flex;
-    gap: 14px;
-    animation: fadeIn 0.3s ease;
+    gap: 12px;
+    font-size: 13.5px;
+    align-items: flex-start;
   }
 
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .trace-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    display: flex;
+  .trace-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 2px;
+    height: 18px;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
+    border: 1px solid transparent;
     flex-shrink: 0;
-    font-size: 13px;
     margin-top: 2px;
   }
 
-  .trace-icon.thought { background: rgba(90,122,144,0.15); }
-  .trace-icon.tool_call { background: rgba(0,200,255,0.12); }
-  .trace-icon.tool_result { background: rgba(0,229,160,0.12); }
-  .trace-icon.error { background: rgba(255,77,106,0.12); }
-
-  .trace-content { flex: 1; min-width: 0; }
-
-  .trace-label {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-  }
-
-  .trace-label.thought { color: var(--text-dim); }
-  .trace-label.tool_call { color: var(--accent); }
-  .trace-label.tool_result { color: var(--green); }
-  .trace-label.error { color: var(--red); }
+  .trace-tag.thought { color: var(--accent); border-color: rgba(223,155,40,0.3); }
+  .trace-tag.tool_call { color: var(--yellow); border-color: rgba(240,194,101,0.3); }
+  .trace-tag.tool_result { color: var(--green); border-color: rgba(6,214,160,0.3); }
+  .trace-tag.error { color: var(--red); border-color: rgba(239,71,111,0.3); }
 
   .trace-text {
-    font-size: 13px;
-    line-height: 1.6;
-    color: var(--text);
+    flex: 1;
+    line-height: 1.5;
+  }
+
+  .trace-code-wrapper {
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 8px;
+    background: #080808;
+  }
+
+  .trace-code-header {
+    background: #0c0c0b;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .copy-code-btn {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+  }
+
+  .copy-code-btn:hover {
+    color: var(--yellow);
   }
 
   .trace-code {
     font-family: var(--mono);
-    font-size: 12px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 10px 14px;
-    color: var(--text);
-    overflow-x: auto;
+    font-size: 11.5px;
+    padding: 12px;
     white-space: pre-wrap;
     word-break: break-all;
+    color: var(--text);
+    overflow-x: auto;
   }
 
-  /* Result card */
+  .copy-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    padding: 4px 10px;
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 11px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.15s;
+  }
+
+  .copy-btn:hover {
+    border-color: var(--accent);
+    color: var(--yellow);
+    background: #111;
+  }
+
+  /* Result card styling */
   #result-card {
     display: none;
-    animation: fadeIn 0.4s ease;
   }
 
   .result-header {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    background: var(--border);
-    border-radius: 8px;
-    overflow: hidden;
+    border: 1px solid var(--border);
     margin-bottom: 20px;
   }
 
   .metric-cell {
-    background: var(--surface2);
-    padding: 18px 20px;
+    background: #0a0a0a;
+    padding: 16px;
     text-align: center;
+    border-right: 1px solid var(--border);
+  }
+
+  .metric-cell:last-child {
+    border-right: none;
   }
 
   .metric-value {
-    font-size: 26px;
+    font-family: var(--serif);
+    font-size: 22px;
     font-weight: 700;
-    font-family: var(--mono);
     margin-bottom: 4px;
   }
 
   .metric-label {
     font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
     color: var(--text-dim);
-    font-family: var(--mono);
+    text-transform: uppercase;
   }
 
   .congestion-low { color: var(--green); }
@@ -399,133 +465,124 @@
   .congestion-critical { color: var(--red); }
 
   .risk-bar {
-    width: 100%;
     height: 4px;
-    background: var(--border);
-    border-radius: 2px;
+    background: var(--bg);
+    border: 1px solid var(--border);
     margin-top: 8px;
     overflow: hidden;
   }
 
   .risk-fill {
     height: 100%;
-    border-radius: 2px;
-    transition: width 1s ease;
+    transition: width 0.5s ease;
     background: linear-gradient(90deg, var(--green), var(--yellow), var(--red));
   }
 
-  .result-section { margin-bottom: 20px; }
-
-  .result-section-title {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin-bottom: 10px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
+  .result-section {
+    margin-bottom: 20px;
   }
 
-  .action-list { display: flex; flex-direction: column; gap: 6px; }
+  .result-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .result-section-title {
+    font-family: var(--serif);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+  }
 
   .action-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 10px 14px;
-    background: var(--surface2);
-    border-radius: 8px;
-    border-left: 3px solid var(--accent);
-    font-size: 14px;
-    line-height: 1.5;
+    padding: 8px 12px;
+    background: #0a0a0a;
+    border-left: 2px solid var(--accent);
+    margin-bottom: 8px;
+    font-size: 13.5px;
+  }
+
+  .action-item:last-child {
+    margin-bottom: 0;
   }
 
   .broadcast-box {
-    background: rgba(0,229,160,0.06);
-    border: 1px solid rgba(0,229,160,0.2);
-    border-radius: 8px;
-    padding: 14px 16px;
+    background: #0a0a0a;
+    border: 1px dashed var(--orange);
+    padding: 12px;
     font-family: var(--mono);
-    font-size: 13px;
-    color: var(--green);
-    line-height: 1.6;
+    font-size: 12.5px;
+    color: var(--orange);
+    line-height: 1.5;
   }
 
   .reasoning-box {
-    background: var(--surface2);
-    border-radius: 8px;
-    padding: 14px 16px;
-    font-size: 14px;
-    line-height: 1.7;
-    color: var(--text);
+    background: #0a0a0a;
+    padding: 12px 14px;
+    font-family: var(--serif);
+    font-size: 13.5px;
+    line-height: 1.6;
     border: 1px solid var(--border);
   }
 
   .confidence-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-family: var(--mono);
-    font-size: 11px;
-    font-weight: 500;
+    font-size: 10px;
+    font-family: var(--sans);
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 2px;
   }
 
-  .confidence-high { background: rgba(0,229,160,0.12); color: var(--green); border: 1px solid rgba(0,229,160,0.25); }
-  .confidence-medium { background: rgba(255,208,96,0.12); color: var(--yellow); border: 1px solid rgba(255,208,96,0.25); }
-  .confidence-low { background: rgba(255,77,106,0.12); color: var(--red); border: 1px solid rgba(255,77,106,0.25); }
+  .confidence-high { color: var(--green); border: 1px solid var(--green); }
+  .confidence-medium { color: var(--yellow); border: 1px solid var(--yellow); }
+  .confidence-low { color: var(--red); border: 1px solid var(--red); }
 
-  /* Empty state */
   .empty-state {
     text-align: center;
-    padding: 48px 20px;
     color: var(--text-muted);
+    font-size: 13px;
+    padding: 30px;
+    font-family: var(--sans);
   }
 
-  .empty-state .big-icon {
-    font-size: 40px;
-    margin-bottom: 16px;
-    opacity: 0.4;
+  .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
   }
-
-  .empty-state p { font-size: 14px; line-height: 1.6; }
 
   /* Scrollbar */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: var(--surface); }
-  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 </style>
 </head>
 <body>
+
 <div class="container">
   <header>
-    <div class="logo">
-      <div class="logo-icon">
-        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-          <path d="M11 2L4 7v8l7 5 7-5V7L11 2z" stroke="#00c8ff" stroke-width="1.5" fill="none"/>
-          <circle cx="11" cy="11" r="2.5" fill="#00c8ff"/>
-          <path d="M11 6v2M11 14v2M6 11h2M14 11h2" stroke="#00c8ff" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <div class="logo-text">
-        <h1>Traf<span>fo</span></h1>
-        <p>Traffic Intelligence System</p>
-      </div>
+    <div class="logo-text">
+      <h1>Traffo</h1>
+      <p>Traffic Congestion & Planning Intelligence Network</p>
     </div>
     <div class="header-status">
-      <div class="status-dot"></div>
-      AGENT READY
+      Engine Status: <span class="status-text">Active</span>
     </div>
   </header>
 
-  <div class="input-section">
-    <span class="input-label">Incident Description</span>
+  <div class="section">
+    <span class="label">Incident Description</span>
     <div class="input-wrapper">
       <textarea
         id="incident-input"
-        placeholder="Describe a traffic incident in natural language... e.g. 'Major accident on NH48 near Hoskote, Bengaluru. 6pm rush hour. Heavy rain. 3 lanes blocked.'"
+        placeholder="Provide incident description or dispatch details... e.g. 'Major accident on NH48 near Hoskote, Bengaluru. 6pm rush hour. Heavy rain. 3 lanes blocked.'"
         maxlength="500"
         oninput="updateCharCount()"
       ></textarea>
@@ -533,31 +590,44 @@
         <span class="char-count"><span id="char-count">0</span>/500</span>
         <button class="analyze-btn" id="analyze-btn" onclick="analyze()">
           <div class="btn-spinner"></div>
-          <span class="btn-text">▶ Analyze Incident</span>
+          <span class="btn-text">Analyze Incident</span>
         </button>
       </div>
     </div>
   </div>
 
-  <div class="examples-row" id="examples-row">
-    <span class="input-label" style="width:100%;margin-bottom:4px;">Try an example</span>
+  <div class="section">
+    <span class="label">Reference Cases</span>
+    <div class="examples" id="examples-row"></div>
+  </div>
+
+  <!-- Map location picker -->
+  <div class="map-panel">
+    <div class="map-panel-header">
+      <span class="panel-title">Pinpoint Location (Optional)</span>
+      <span class="panel-badge" style="margin-left:auto">SEARCH OR CLICK MAP</span>
+    </div>
+    <div class="map-search-wrapper">
+      <input id="map-search" type="text" placeholder="Search for a street, junction, or landmark..." autocomplete="off" />
+      <div id="search-results"></div>
+    </div>
+    <div id="map"></div>
+    <div class="map-footer">
+      <span class="selected-location" id="selected-location">No location pinned — agent will rely on text only</span>
+      <button class="clear-pin-btn" id="clear-pin-btn" onclick="clearPin()" style="display:none">Clear pin</button>
+    </div>
   </div>
 
   <!-- Agent Trace -->
   <div class="panel" id="trace-panel">
     <div class="panel-header">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-        <circle cx="6" cy="6" r="5" stroke="#5a7a90" stroke-width="1.2"/>
-        <path d="M6 4v3M6 8.5v.5" stroke="#5a7a90" stroke-width="1.2" stroke-linecap="round"/>
-      </svg>
-      <span class="panel-title">Agent Reasoning Trace</span>
+      <span class="panel-title">System Analysis Logs</span>
       <span class="panel-badge" id="step-count">0 steps</span>
     </div>
     <div class="panel-body">
       <div id="trace-container">
         <div class="empty-state">
-          <div class="big-icon">🧠</div>
-          <p>Agent reasoning will appear here in real time.<br/>Each tool call, thought, and decision is shown as it happens.</p>
+          <p>System analysis logs will render here during processing.</p>
         </div>
       </div>
     </div>
@@ -566,60 +636,165 @@
   <!-- Result Card -->
   <div class="panel" id="result-card">
     <div class="panel-header">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-        <path d="M2 6l3 3 5-5" stroke="#00e5a0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <span class="panel-title">Incident Response Plan</span>
-      <span class="panel-badge" id="confidence-display">–</span>
+      <span class="panel-title">Response & Action Plan</span>
+      <div style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
+        <button class="copy-btn" id="copy-result-json-btn" onclick="copyResultJSON()" style="display: none;">Copy JSON</button>
+        <span class="panel-badge" id="confidence-display">–</span>
+      </div>
     </div>
     <div class="panel-body" id="result-body"></div>
   </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   const API_BASE = "http://localhost:8000";
   let stepCount = 0;
+  let pinnedLocation = null; // { lat, lon, label }
+  let marker = null;
+  let latestResult = null;
+  const tracePayloads = {};
+  let traceId = 0;
+
+  // ── Map Setup ──────────────────────────────────────────────────
+  const map = L.map('map', { zoomControl: true, attributionControl: true }).setView([12.9716, 77.5946], 12); // default: Bengaluru
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  function setPin(lat, lon, label) {
+    pinnedLocation = { lat, lon, label };
+    if (marker) map.removeLayer(marker);
+    marker = L.marker([lat, lon]).addTo(map);
+    map.setView([lat, lon], 15);
+
+    const display = document.getElementById('selected-location');
+    display.textContent = `📍 ${label} (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+    display.classList.add('active');
+    document.getElementById('clear-pin-btn').style.display = 'block';
+  }
+
+  function clearPin() {
+    pinnedLocation = null;
+    if (marker) { map.removeLayer(marker); marker = null; }
+    const display = document.getElementById('selected-location');
+    display.textContent = 'No location pinned — agent will rely on text only';
+    display.classList.remove('active');
+    document.getElementById('clear-pin-btn').style.display = 'none';
+  }
+
+  // Click on map to drop a pin directly
+  map.on('click', async (e) => {
+    const { lat, lng } = e.latlng;
+    // Reverse geocode to get a human-readable label
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16`, {
+        headers: { 'Accept-Language': 'en' }
+      });
+      const data = await r.json();
+      const label = data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      setPin(lat, lng, label.split(',').slice(0, 3).join(','));
+    } catch {
+      setPin(lat, lng, `${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+    }
+  });
+
+  // ── Search box (Nominatim, free, no key) ──────────────────────
+  let searchTimeout = null;
+  const searchInput = document.getElementById('map-search');
+  const resultsBox = document.getElementById('search-results');
+
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    const query = searchInput.value.trim();
+    if (query.length < 3) {
+      resultsBox.style.display = 'none';
+      return;
+    }
+    searchTimeout = setTimeout(() => doSearch(query), 400);
+  });
+
+  async function doSearch(query) {
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`, {
+        headers: { 'Accept-Language': 'en' }
+      });
+      const results = await r.json();
+      resultsBox.innerHTML = '';
+      if (!results.length) {
+        resultsBox.style.display = 'none';
+        return;
+      }
+      results.forEach(place => {
+        const item = document.createElement('div');
+        item.className = 'search-result-item';
+        item.textContent = place.display_name;
+        item.onclick = () => {
+          const label = place.display_name.split(',').slice(0, 3).join(',');
+          setPin(parseFloat(place.lat), parseFloat(place.lon), label);
+          resultsBox.style.display = 'none';
+          searchInput.value = label;
+        };
+        resultsBox.appendChild(item);
+      });
+      resultsBox.style.display = 'block';
+    } catch (e) {
+      resultsBox.style.display = 'none';
+    }
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!resultsBox.contains(e.target) && e.target !== searchInput) {
+      resultsBox.style.display = 'none';
+    }
+  });
+
+  // ── Existing functionality ────────────────────────────────────
 
   function updateCharCount() {
     const val = document.getElementById('incident-input').value.length;
     document.getElementById('char-count').textContent = val;
   }
 
-  // Load examples from API
   async function loadExamples() {
-    try {
-      const r = await fetch(`${API_BASE}/examples`);
-      const data = await r.json();
-      const row = document.getElementById('examples-row');
-      data.examples.forEach(ex => {
-        const chip = document.createElement('div');
-        chip.className = 'example-chip';
-        chip.title = ex;
-        chip.textContent = ex.length > 60 ? ex.substring(0, 57) + '...' : ex;
-        chip.onclick = () => {
-          document.getElementById('incident-input').value = ex;
-          updateCharCount();
-        };
-        row.appendChild(chip);
-      });
-    } catch (e) {
-      // API not running — show static examples
-      const examples = [
-        "Major accident on NH48 near Hoskote, Bengaluru. 6pm rush hour. Heavy rain. 3 lanes blocked.",
-        "Flash floods near Silk Board junction, Bengaluru. Metro delayed.",
-        "Multi-vehicle pile-up on ORR near Marathahalli. Morning peak hour. Foggy.",
-      ];
-      const row = document.getElementById('examples-row');
-      examples.forEach(ex => {
-        const chip = document.createElement('div');
-        chip.className = 'example-chip';
-        chip.textContent = ex.length > 60 ? ex.substring(0, 57) + '...' : ex;
-        chip.onclick = () => {
-          document.getElementById('incident-input').value = ex;
-          updateCharCount();
-        };
-        row.appendChild(chip);
-      });
+    const examples = [
+      "Major accident on NH48 near Hoskote, Bengaluru. 6pm rush hour. Heavy rain. 3 lanes blocked.",
+      "Flash floods reported near Silk Board junction, Bengaluru. Metro delayed.",
+      "Multi-vehicle pile-up on ORR near Marathahalli. Morning peak hour. Foggy.",
+      "Road cave-in near Guindy, Chennai. Emergency vehicles need corridor.",
+      "Protest march on MG Road blocking all lanes. Weekend afternoon.",
+    ];
+    const row = document.getElementById('examples-row');
+    examples.forEach(ex => {
+      const chip = document.createElement('div');
+      chip.className = 'example-chip';
+      chip.title = ex;
+      chip.textContent = ex;
+      chip.onclick = () => {
+        document.getElementById('incident-input').value = ex;
+        updateCharCount();
+      };
+      row.appendChild(chip);
+    });
+  }
+
+  function copyTracePayload(id, btn, originalText) {
+    const text = tracePayloads[id];
+    if (text) {
+      navigator.clipboard.writeText(text);
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = originalText; }, 2000);
+    }
+  }
+
+  function copyResultJSON() {
+    if (latestResult) {
+      navigator.clipboard.writeText(JSON.stringify(latestResult, null, 2));
+      const btn = document.getElementById('copy-result-json-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy JSON'; }, 2000);
     }
   }
 
@@ -628,42 +803,51 @@
     document.getElementById('step-count').textContent = `${stepCount} step${stepCount > 1 ? 's' : ''}`;
 
     const container = document.getElementById('trace-container');
-    // Remove empty state if present
     const empty = container.querySelector('.empty-state');
     if (empty) empty.remove();
 
-    const icons = {
-      thought: '💭',
-      tool_call: '🔧',
-      tool_result: '📦',
-      error: '⚠️'
-    };
-
     const labels = {
-      thought: 'Reasoning',
-      tool_call: 'Tool Call',
-      tool_result: 'Tool Result',
-      error: 'Error'
+      thought: 'THINK',
+      tool_call: 'CALL',
+      tool_result: 'DATA',
+      error: 'ERROR'
     };
 
     const step = document.createElement('div');
     step.className = 'trace-step';
 
     let contentHTML = '';
+    const currentId = `trace-${traceId++}`;
 
     if (type === 'tool_call') {
-      contentHTML = `<div class="trace-code">→ ${content.tool}(${JSON.stringify(content.args, null, 2)})</div>`;
+      const argsStr = JSON.stringify(content.args, null, 2);
+      tracePayloads[currentId] = argsStr;
+      contentHTML = `
+        <div class="trace-code-wrapper">
+          <div class="trace-code-header">
+            <span>→ ${content.tool}</span>
+            <button class="copy-code-btn" onclick="copyTracePayload('${currentId}', this, 'Copy Arguments')">Copy Arguments</button>
+          </div>
+          <div class="trace-code">${content.tool}(${argsStr})</div>
+        </div>`;
     } else if (type === 'tool_result') {
       const resultStr = JSON.stringify(content.result, null, 2);
-      contentHTML = `<div class="trace-code">${content.tool} returned:\n${resultStr.length > 400 ? resultStr.substring(0, 400) + '...' : resultStr}</div>`;
+      tracePayloads[currentId] = resultStr;
+      contentHTML = `
+        <div class="trace-code-wrapper">
+          <div class="trace-code-header">
+            <span>${content.tool} Result</span>
+            <button class="copy-code-btn" onclick="copyTracePayload('${currentId}', this, 'Copy JSON')">Copy JSON</button>
+          </div>
+          <div class="trace-code">${resultStr.length > 400 ? resultStr.substring(0, 400) + '...' : resultStr}</div>
+        </div>`;
     } else {
       contentHTML = `<div class="trace-text">${typeof content === 'string' ? content : JSON.stringify(content)}</div>`;
     }
 
     step.innerHTML = `
-      <div class="trace-icon ${type}">${icons[type] || '•'}</div>
-      <div class="trace-content">
-        <div class="trace-label ${type}">${labels[type] || type}</div>
+      <div class="trace-tag ${type}">${labels[type] || type}</div>
+      <div class="trace-text">
         ${contentHTML}
       </div>
     `;
@@ -673,18 +857,20 @@
   }
 
   function renderResult(result) {
+    latestResult = result;
+    document.getElementById('copy-result-json-btn').style.display = 'inline-block';
+
     const card = document.getElementById('result-card');
     const body = document.getElementById('result-body');
     card.style.display = 'block';
 
-    // Update confidence badge
     const conf = result.confidence || 'medium';
     const confBadge = document.getElementById('confidence-display');
     confBadge.textContent = `${conf.toUpperCase()} CONFIDENCE`;
     confBadge.className = `panel-badge confidence-badge confidence-${conf}`;
 
     const congLevel = (result.congestion_level || 'unknown').toLowerCase();
-    const riskScore = result.risk_score || 0;
+    const riskScore = result.risk_score ?? '–';
     const actions = result.recommended_actions || [];
 
     body.innerHTML = `
@@ -694,14 +880,14 @@
           <div class="metric-label">Congestion Level</div>
         </div>
         <div class="metric-cell">
-          <div class="metric-value" style="color: ${riskScore >= 8 ? 'var(--red)' : riskScore >= 5 ? 'var(--yellow)' : 'var(--green)'}">${riskScore}<span style="font-size:14px;color:var(--text-dim)">/10</span></div>
+          <div class="metric-value" style="color: ${typeof riskScore === 'number' && riskScore >= 8 ? 'var(--red)' : typeof riskScore === 'number' && riskScore >= 5 ? 'var(--yellow)' : 'var(--green)'}">${riskScore}${typeof riskScore === 'number' ? '<span style="font-size:12px;color:var(--text-dim);font-family:var(--sans)">/10</span>' : ''}</div>
           <div class="metric-label">Risk Score</div>
-          <div class="risk-bar"><div class="risk-fill" style="width: ${riskScore * 10}%"></div></div>
+          ${typeof riskScore === 'number' ? `<div class="risk-bar"><div class="risk-fill" style="width: ${riskScore * 10}%"></div></div>` : ''}
         </div>
         <div class="metric-cell">
-          <div class="metric-value" style="font-size:14px; color: var(--text); padding-top:4px">${result.affected_area || 'Unknown area'}</div>
+          <div class="metric-value" style="font-size:14px; color: var(--text); padding-top:4px; font-family: var(--serif);">${result.affected_area || 'Unknown area'}</div>
           <div class="metric-label">Affected Area</div>
-          <div style="margin-top:6px;font-size:11px;font-family:var(--mono);color:var(--text-dim)">${result.primary_cause || ''}</div>
+          <div style="margin-top:6px;font-size:11px;font-family:var(--sans);color:var(--text-dim);font-weight:500;">${result.primary_cause || ''}</div>
         </div>
       </div>
 
@@ -709,20 +895,20 @@
       <div class="result-section">
         <div class="result-section-title">Recommended Actions</div>
         <div class="action-list">
-          ${actions.map(a => `<div class="action-item"><span style="color:var(--accent);flex-shrink:0">›</span>${a}</div>`).join('')}
+          ${actions.map(a => `<div class="action-item">— ${a}</div>`).join('')}
         </div>
       </div>` : ''}
 
       ${result.signal_adjustments ? `
       <div class="result-section">
         <div class="result-section-title">Signal Adjustments</div>
-        <div class="reasoning-box">${result.signal_adjustments}</div>
+        <div class="reasoning-box" style="border-left: 2px solid var(--yellow);">${result.signal_adjustments}</div>
       </div>` : ''}
 
       ${result.public_broadcast ? `
       <div class="result-section">
         <div class="result-section-title">Public Broadcast Message</div>
-        <div class="broadcast-box">📢 ${result.public_broadcast}</div>
+        <div class="broadcast-box">${result.public_broadcast}</div>
       </div>` : ''}
 
       ${result.reasoning_summary ? `
@@ -736,22 +922,26 @@
   }
 
   async function analyze() {
-    const incident = document.getElementById('incident-input').value.trim();
+    let incident = document.getElementById('incident-input').value.trim();
     if (!incident) {
       document.getElementById('incident-input').focus();
       return;
     }
 
-    // Reset UI
+    if (pinnedLocation) {
+      incident += `\n\nMAP LOCATION: lat=${pinnedLocation.lat}, lon=${pinnedLocation.lon}, label=${pinnedLocation.label}`;
+    }
+
     stepCount = 0;
     document.getElementById('step-count').textContent = '0 steps';
     document.getElementById('trace-container').innerHTML = `
       <div class="empty-state">
-        <div class="big-icon" style="animation: pulse 1s infinite">⚡</div>
-        <p>Agent is analyzing the incident...</p>
+        <p>Analyzing dispatch parameters...</p>
       </div>
     `;
     document.getElementById('result-card').style.display = 'none';
+    document.getElementById('copy-result-json-btn').style.display = 'none';
+    latestResult = null;
 
     const btn = document.getElementById('analyze-btn');
     btn.disabled = true;
@@ -800,7 +990,6 @@
     btn.classList.remove('loading');
   }
 
-  // Allow Enter to submit (Shift+Enter for newline)
   document.addEventListener('DOMContentLoaded', () => {
     loadExamples();
     document.getElementById('incident-input').addEventListener('keydown', (e) => {
