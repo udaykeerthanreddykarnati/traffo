@@ -1,7 +1,11 @@
 """
 Traffo Agent — Agentic Traffic Incident Response System
 Uses Groq (free) as the LLM backbone with Llama 3.3 70B.
+<<<<<<< HEAD
+Tools: weather (by name or coordinates), routing, news search, rule validator, escalation
+=======
 Tools: weather, routing, news search, rule validator, escalation
+>>>>>>> origin/main
 """
 
 import os
@@ -16,6 +20,11 @@ groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY", ""))
 
 # ── Tool Implementations ──────────────────────────────────────────────────────
 
+<<<<<<< HEAD
+def _weather_from_coords(lat: float, lon: float, label: str) -> dict:
+    """Internal helper: fetch weather directly from coordinates, no geocoding needed."""
+    try:
+=======
 def get_weather(location: str) -> dict:
     """Fetch live weather for a location using Open-Meteo (completely free, no key)."""
     try:
@@ -27,6 +36,7 @@ def get_weather(location: str) -> dict:
         lat, lon = result["latitude"], result["longitude"]
         city = result.get("name", location)
 
+>>>>>>> origin/main
         weather_url = (
             f"https://api.open-meteo.com/v1/forecast"
             f"?latitude={lat}&longitude={lon}"
@@ -47,7 +57,12 @@ def get_weather(location: str) -> dict:
         visibility_km = round(visibility_m / 1000, 1) if visibility_m else "N/A"
 
         return {
+<<<<<<< HEAD
+            "location": label,
+            "coordinates": {"lat": lat, "lon": lon},
+=======
             "location": city,
+>>>>>>> origin/main
             "temperature_c": w.get("temperature_2m"),
             "precipitation_mm": w.get("precipitation"),
             "wind_speed_kmh": w.get("windspeed_10m"),
@@ -59,6 +74,30 @@ def get_weather(location: str) -> dict:
         return {"error": str(e)}
 
 
+<<<<<<< HEAD
+def get_weather(location: str) -> dict:
+    """Fetch live weather for a location name using Open-Meteo (free, no key).
+    Only works for cities/towns — not streets, junctions, or landmarks."""
+    try:
+        geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={requests.utils.quote(location)}&count=1"
+        geo = requests.get(geo_url, timeout=5).json()
+        if not geo.get("results"):
+            return {"error": f"Could not find location: {location}"}
+        result = geo["results"][0]
+        lat, lon = result["latitude"], result["longitude"]
+        city = result.get("name", location)
+        return _weather_from_coords(lat, lon, city)
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def get_weather_by_coords(lat: float, lon: float, label: str = "") -> dict:
+    """Fetch live weather directly from exact coordinates — no geocoding required."""
+    return _weather_from_coords(lat, lon, label or f"{lat},{lon}")
+
+
+=======
+>>>>>>> origin/main
 def get_alternate_routes(origin: str, destination: str) -> dict:
     """Get alternate route suggestions. Uses simulated routes if no ORS key."""
     api_key = os.environ.get("ORS_API_KEY", "")
@@ -179,6 +218,10 @@ def escalate_to_human(reason: str, situation_summary: str) -> dict:
 
 TOOLS = {
     "get_weather": get_weather,
+<<<<<<< HEAD
+    "get_weather_by_coords": get_weather_by_coords,
+=======
+>>>>>>> origin/main
     "get_alternate_routes": get_alternate_routes,
     "search_traffic_news": search_traffic_news,
     "validate_decision": validate_decision,
@@ -189,6 +232,26 @@ TOOL_DESCRIPTIONS = """
 You have access to these tools. Call them by outputting JSON with {"tool": "name", "args": {...}}
 
 1. get_weather(location: str)
+<<<<<<< HEAD
+   → Returns live weather for a CITY or TOWN name only. Will fail on streets, junctions, or landmarks.
+
+2. get_weather_by_coords(lat: float, lon: float, label: str)
+   → Returns live weather for exact coordinates.
+
+3. get_alternate_routes(origin: str, destination: str)
+   → Returns alternate route options with congestion estimates
+
+4. search_traffic_news(location: str)
+   → Searches for recent traffic incidents and news near a location. Use the specific
+     street/junction/landmark name here, not the broader city, for the most relevant results.
+
+5. validate_decision(congestion_level: str, risk_score: int, weather_condition: str, lanes_blocked: int, time_of_day: str)
+   → Validates your decision against traffic management rules. ALWAYS call this before final output.
+
+6. escalate_to_human(reason: str, situation_summary: str)
+   → Escalates to human operator if situation is too ambiguous or critical. This ends your
+     analysis immediately — only call this when you genuinely cannot proceed.
+=======
    → Returns live weather conditions for a location
 
 2. get_alternate_routes(origin: str, destination: str)
@@ -202,6 +265,7 @@ You have access to these tools. Call them by outputting JSON with {"tool": "name
 
 5. escalate_to_human(reason: str, situation_summary: str)
    → Escalates to human operator if situation is too ambiguous or critical
+>>>>>>> origin/main
 
 When you have enough information and have validated your decision, output your FINAL RESPONSE as:
 {"final_response": {
@@ -217,6 +281,20 @@ When you have enough information and have validated your decision, output your F
 }}
 """
 
+<<<<<<< HEAD
+BASE_SYSTEM_PROMPT = """You are Traffo, an agentic traffic incident response system.
+
+Your job: given a natural language traffic situation, autonomously gather information using your tools and produce a structured incident response plan.
+
+CRITICAL RULE ON LOCATION NAMES: When calling any tool that takes a location name, you MUST copy the exact place name as it appears in the original incident text, character for character. Never paraphrase, abbreviate, autocorrect, or invent a spelling for a location.
+
+CRITICAL RULE ON WEATHER FOR SPECIFIC PLACES: get_weather (the name-based version) only recognizes cities and towns, not streets, junctions, or landmarks. If the incident mentions a specific street/junction (e.g. "MG Road", "Silk Board junction"), call get_weather using only the broader city name, since weather doesn't meaningfully vary block to block. Use the specific street/junction name for search_traffic_news and in your final output fields instead.
+
+Your reasoning process:
+1. Parse the incident: identify location, time, weather mentions, severity cues
+2. Check live weather using get_weather with the city name (skip this step entirely if weather data is already provided to you below)
+3. Search for related news/incidents nearby, using the specific street/junction name
+=======
 SYSTEM_PROMPT = """You are Traffo, an agentic traffic incident response system.
 
 Your job: given a natural language traffic situation, autonomously gather information using your tools and produce a structured incident response plan.
@@ -227,11 +305,16 @@ Your reasoning process:
 1. Parse the incident: identify location, time, weather mentions, severity cues — extract the location as a literal substring of the user's text
 2. Always check live weather for the location, using the exact wording from step 1
 3. Search for related news/incidents nearby
+>>>>>>> origin/main
 4. If a destination is mentioned or implied, check alternate routes
 5. Reason about cascading effects (will alternate routes also jam up?)
 6. Form your decision (congestion level, risk score, actions)
 7. ALWAYS validate your decision using validate_decision before finishing
+<<<<<<< HEAD
+8. If the incident has no usable location, no clear severity, or conflicting signals you cannot resolve, call escalate_to_human instead of guessing. Escalation ends your analysis immediately.
+=======
 8. If the incident has no usable location, no clear severity, or conflicting signals you cannot resolve, call escalate_to_human instead of guessing. Escalation ends your analysis immediately — you will not get a chance to revise it afterward, so only escalate when you are genuinely unable to proceed.
+>>>>>>> origin/main
 
 Think step by step. Be methodical. Each tool call should be motivated by a specific gap in your knowledge.
 Output ONLY valid JSON for tool calls and final response. No markdown, no explanation outside JSON.
@@ -239,6 +322,34 @@ Output ONLY valid JSON for tool calls and final response. No markdown, no explan
 """ + TOOL_DESCRIPTIONS
 
 
+<<<<<<< HEAD
+# ── Map Coordinate Pre-processing ─────────────────────────────────────────────
+# Small models on free-tier providers (like Llama 3.3 on Groq) are unreliable
+# at noticing instructions buried inside a long user message — in testing,
+# the agent repeatedly ignored a "MAP LOCATION: lat=X, lon=Y" hint and called
+# the name-based weather tool instead. Rather than fight this with more
+# prompt engineering, we detect map coordinates in Python with a regex and
+# call get_weather_by_coords ourselves before the LLM ever starts reasoning.
+# This guarantees correct behavior regardless of model reliability, and the
+# pre-fetched result is then handed to the agent as a fact it doesn't need
+# to look up itself.
+
+MAP_LOCATION_PATTERN = re.compile(
+    r"MAP LOCATION:\s*lat=(-?\d+\.?\d*),\s*lon=(-?\d+\.?\d*),\s*label=(.+)"
+)
+
+
+def extract_map_location(incident_description: str):
+    """Returns (lat, lon, label) if a MAP LOCATION line is present, else None."""
+    match = MAP_LOCATION_PATTERN.search(incident_description)
+    if not match:
+        return None
+    lat, lon, label = match.groups()
+    return float(lat), float(lon), label.strip()
+
+
+=======
+>>>>>>> origin/main
 # ── Agent Loop ────────────────────────────────────────────────────────────────
 
 def run_agent(incident_description: str):
@@ -246,9 +357,34 @@ def run_agent(incident_description: str):
     Main agent loop. Yields streaming updates as (type, content) tuples.
     Types: "thought", "tool_call", "tool_result", "final", "error"
     """
+<<<<<<< HEAD
+    system_prompt = BASE_SYSTEM_PROMPT
+    user_message = f"INCIDENT: {incident_description}\n\nCopy location names exactly from this text. Do not alter spelling."
+
+    # If the user pinned an exact location on the map, fetch weather for it
+    # ourselves right now — guaranteed, no LLM involved — and hand the agent
+    # the result as a known fact instead of hoping it calls the right tool.
+    map_location = extract_map_location(incident_description)
+    if map_location:
+        lat, lon, label = map_location
+        yield ("tool_call", {"tool": "get_weather_by_coords", "args": {"lat": lat, "lon": lon, "label": label}})
+        precomputed_weather = get_weather_by_coords(lat, lon, label)
+        yield ("tool_result", {"tool": "get_weather_by_coords", "result": precomputed_weather})
+
+        user_message += (
+            f"\n\nWEATHER DATA (already fetched for the pinned map location '{label}', "
+            f"do not call get_weather or get_weather_by_coords again — use this directly): "
+            f"{json.dumps(precomputed_weather)}"
+        )
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_message}
+=======
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": f"INCIDENT: {incident_description}\n\nIMPORTANT: When you call get_weather or search_traffic_news, copy location names exactly from this incident text above. Do not alter spelling."}
+>>>>>>> origin/main
     ]
 
     max_iterations = 8
@@ -295,6 +431,18 @@ def run_agent(incident_description: str):
             tool_name = parsed.get("tool")
             tool_args = parsed.get("args", {})
 
+<<<<<<< HEAD
+            # Skip redundant weather calls — we already pre-fetched it above
+            if map_location and tool_name in ("get_weather", "get_weather_by_coords"):
+                tool_result = {"note": "Weather already provided above for the pinned location. Use that data."}
+                yield ("tool_call", {"tool": tool_name, "args": tool_args})
+                yield ("tool_result", {"tool": tool_name, "result": tool_result})
+                messages.append({"role": "assistant", "content": raw})
+                messages.append({"role": "user", "content": f"Tool result for {tool_name}: {json.dumps(tool_result)}\n\nContinue your analysis using the weather data already provided."})
+                continue
+
+=======
+>>>>>>> origin/main
             yield ("tool_call", {"tool": tool_name, "args": tool_args})
 
             if tool_name not in TOOLS:
@@ -336,4 +484,8 @@ def run_agent(incident_description: str):
             messages.append({"role": "assistant", "content": raw})
             messages.append({"role": "user", "content": "Continue. Use a tool or provide final_response."})
 
+<<<<<<< HEAD
     yield ("error", "Agent reached maximum iterations without a final response.")
+=======
+    yield ("error", "Agent reached maximum iterations without a final response.")
+>>>>>>> origin/main
